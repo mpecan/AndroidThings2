@@ -31,13 +31,12 @@ import com.google.android.things.pio.PeripheralManagerService
  */
 class MainActivity : Activity() {
 
-
     var sleep = 2000L
     var step = 200L
 
-    private lateinit var currentTiming: EditText
+    private lateinit var currentTiming: TextView
 
-    private lateinit var stepEdit: EditText
+    private lateinit var stepEdit: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,46 +46,21 @@ class MainActivity : Activity() {
         val led = service.openGpio("GPIO_37")
         led.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW)
 
-        currentTiming = findViewById<EditText>(R.id.current_timing)
+        findElements()
 
-
-        findViewById<Button>(R.id.up).setOnClickListener {
-            increase()
-        }
-        findViewById<Button>(R.id.down).setOnClickListener {
-            decrease()
-        }
-        findViewById<Button>(R.id.step_up).setOnClickListener {
-            increase_step()
-        }
-        findViewById<Button>(R.id.step_down).setOnClickListener {
-            decrease_step()
-        }
-
-        currentTiming.setOnFocusChangeListener { v, hasFocus ->
-            if(!hasFocus){
-                sleep = currentTiming.text.toString().toLong()
-            }
-        }
-
-        stepEdit = findViewById<EditText>(R.id.step)
-        stepEdit.setOnFocusChangeListener { v, hasFocus ->
-            if(!hasFocus){
-                step = stepEdit.text.toString().toLong()
-            }
-        }
+        registerListeners()
 
         val button = service.openGpio("GPIO_32")
         button.setDirection(Gpio.DIRECTION_IN)
         button.setEdgeTriggerType(Gpio.EDGE_FALLING)
 
-        button.registerGpioCallback(object: GpioCallback() {
+        button.registerGpioCallback(object : GpioCallback() {
             override fun onGpioEdge(gpio: Gpio?): Boolean {
                 decrease()
                 return true
             }
         })
-        val thread = object: Thread(){
+        val thread = object : Thread() {
             override fun run() {
                 while (true) {
                     led.value = !led.value
@@ -98,34 +72,70 @@ class MainActivity : Activity() {
 
     }
 
-    fun increase() {
+    private fun registerListeners() {
+        findViewById<Button>(R.id.up).setOnClickListener {
+            increase()
+        }
+        findViewById<Button>(R.id.down).setOnClickListener {
+            decrease()
+        }
+        findViewById<Button>(R.id.step_up).setOnClickListener {
+            increaseStep()
+        }
+        findViewById<Button>(R.id.step_down).setOnClickListener {
+            decreaseStep()
+        }
+
+        currentTiming.setOnFocusChangeListener { v, hasFocus ->
+            if (!hasFocus) {
+                sleep = currentTiming.text.toString().toLong()
+            }
+        }
+
+        stepEdit.setOnFocusChangeListener { v, hasFocus ->
+            if (!hasFocus) {
+                step = stepEdit.text.toString().toLong()
+            }
+        }
+    }
+
+    private fun findElements() {
+        currentTiming = findViewById(R.id.current_timing)
+        stepEdit = findViewById(R.id.step)
+    }
+
+    private fun increase() {
         sleep += step;
-        currentTiming.text.clear()
-        currentTiming.text.append(sleep.toString())
+        displaySleepValue()
     }
 
     fun decrease() {
         sleep -= step;
-        if(sleep < 1){
+        if (sleep < 1) {
             sleep = 2000
         }
-        currentTiming.text.clear()
-        currentTiming.text.append(sleep.toString())
+        displaySleepValue()
     }
 
-    fun increase_step() {
+    private fun displaySleepValue() {
+        currentTiming.text = sleep.toString()
+    }
+
+    private fun increaseStep() {
         step += 50;
-        stepEdit.text.clear()
-        stepEdit.text.append(step.toString())
+        displayStepValue()
     }
 
-    fun decrease_step() {
+    private fun displayStepValue() {
+        stepEdit.text = step.toString()
+    }
+
+    private fun decreaseStep() {
         step -= 50;
-        if(sleep < 1){
+        if (sleep < 1) {
             sleep = 200
         }
-        stepEdit.text.clear()
-        stepEdit.text.append(step.toString())
+        displayStepValue()
     }
 
 
