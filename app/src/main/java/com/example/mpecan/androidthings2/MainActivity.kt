@@ -3,11 +3,11 @@ package com.example.mpecan.androidthings2
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import com.google.android.things.pio.Gpio
 import com.google.android.things.pio.GpioCallback
 import com.google.android.things.pio.PeripheralManagerService
+
 
 /**
  * Skeleton of an Android Things activity.
@@ -23,7 +23,7 @@ import com.google.android.things.pio.PeripheralManagerService
  * mLedGpio.value = true
  * }</pre>
  * <p>
- * For more complex peripherals, look for an existing user-space driver, or implement one if none
+ * For more complex peripherals, look for an existing user-space , or implement one if none
  * is available.
  *
  * @see <a href="https://github.com/androidthings/contrib-drivers#readme">https://github.com/androidthings/contrib-drivers#readme</a>
@@ -32,7 +32,13 @@ import com.google.android.things.pio.PeripheralManagerService
 class MainActivity : Activity() {
 
     var sleep = 2000L
+        set(value) {
+            field = value
+            blinker.sleep = value
+        }
     var step = 200L
+
+    lateinit var blinker: TimedTrigger
 
     private lateinit var currentTiming: TextView
 
@@ -46,6 +52,11 @@ class MainActivity : Activity() {
         val led = service.openGpio("GPIO_37")
         led.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW)
 
+        blinker = TimedTrigger(sleep) {
+            led.value = !led.value
+        }
+        blinker.start()
+
         findElements()
 
         registerListeners()
@@ -54,21 +65,18 @@ class MainActivity : Activity() {
         button.setDirection(Gpio.DIRECTION_IN)
         button.setEdgeTriggerType(Gpio.EDGE_FALLING)
 
+        val debouncer = Debouncer(250) {
+            sleep /= 2
+            displaySleepValue()
+        }
+
         button.registerGpioCallback(object : GpioCallback() {
             override fun onGpioEdge(gpio: Gpio?): Boolean {
-                decrease()
+                debouncer.trigger()
                 return true
             }
         })
-        val thread = object : Thread() {
-            override fun run() {
-                while (true) {
-                    led.value = !led.value
-                    Thread.sleep(sleep)
-                }
-            }
-        }
-        thread.start()
+
 
     }
 

@@ -15,11 +15,11 @@ class Debouncer(private var offset: Long, private var function: () -> Unit){
     fun trigger() {
         val currentTimeInMilis = System.currentTimeMillis()
         if(lastTriggered + offset < currentTimeInMilis){
-            lastTriggered = currentTimeInMilis
             function.invoke()
             Log.i("DEBOUNCER", "Triggering")
         } else {
             Log.i("DEBOUNCER", "Skipping trigger")
         }
+        lastTriggered = currentTimeInMilis
     }
 }
